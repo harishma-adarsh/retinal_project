@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Command Center — Eye4Heart AI</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+  <link href="{% static 'css/base.css' %}" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #f0f4f8;
+    }
+
+
+    .dash-header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: white;
+      padding: 60px 0 100px 0;
+      margin-bottom: -80px;
+    }
+
+    .dash-header .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-content h1 {
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .header-content p {
+      opacity: 0.8;
+      font-weight: 300;
+      font-size: 16px;
+      max-width: 600px;
+    }
+
+    /* Header Actions & Profile */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .profile-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: right;
+      padding-left: 24px;
+      border-left: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .profile-info .profile-email {
+      font-weight: 600;
+      font-size: 14px;
+      display: block;
+      color: white;
+    }
+
+    .profile-info .profile-role {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+      display: block;
+      margin-top: 2px;
+    }
+
+    .profile-avatar-small {
+      width: 44px;
+      height: 44px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-weight: 600;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin-top: 25px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(14, 165, 162, 0.05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .stat-value {
+      font-size: 36px;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1;
+      margin: 10px 0;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    .stat-icon {
+      float: right;
+      width: 48px;
+      height: 48px;
+      background: #f1f5f9;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: var(--primary-600);
+      font-size: 20px;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+      margin-top: 25px;
+    }
+
+    .content-card {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+      border: 1px solid #f1f5f9;
+    }
+
+    .content-card h3 {
+      font-size: 18px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    th {
+      text-align: left;
+      padding: 12px 15px;
+      background: #f8fafc;
+      color: #64748b;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid #f1f5f9;
+    }
+
+    td {
+      padding: 15px;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 14px;
+      color: #334155;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: #fcfdfe;
+    }
+
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      background: var(--primary-600);
+      color: white;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal.open {
+      display: flex;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .modal-sheet {
+      background: white;
+      width: 100%;
+      max-width: 450px;
+      border-radius: 24px;
+      padding: 35px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      transform: scale(0.95);
+      transition: transform 0.3s ease;
+    }
+
+    .modal.open .modal-sheet {
+      transform: scale(1);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 8px;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--primary-600);
+      box-shadow: 0 0 0 4px rgba(14, 165, 162, 0.1);
+    }
+
+    .btn-danger {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fee2e2;
+    }
+
+    .btn-danger:hover {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .alert {
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin-bottom: 25px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 500;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .alert-success {
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #d1fae5;
+    }
+
+    .alert-error {
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fee2e2;
+    }
+
+    @media (max-width: 992px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="site">
+    <div class="container nav">
+      <div class="brand"><i class="fa-solid fa-shield-halved"></i> Eye4Heart Admin</div>
+      <ul class="nav-links">
+        <li><a href="{% url 'index' %}">Home</a></li>
+        <li><a href="{% url 'logout' %}" class="btn btn-danger"><i class="fa-solid fa-right-from-bracket"></i>
+            Logout</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <div class="dash-header">
+    <div class="container">
+      <div class="header-content">
+        <h1>Welcome, {{ user.first_name|default:user.username }}</h1>
+        <p>Operational summary for your assigned patient load and critical AI reviews.</p>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn btn-primary" onclick="openModal()"
+          style="padding: 10px 20px; font-size: 14px; box-shadow: 0 4px 12px rgba(14, 165, 162, 0.3); height: fit-content;">
+          <i class="fa-solid fa-plus"></i> New User
+        </button>
+
+        <div class="profile-section">
+          <div class="profile-info">
+            <div class="profile-email">{{ user.email|default:"dr@demo.health" }}</div>
+            <div class="profile-role">
+              {{ user.userprofile.specialization|default:"Medical Practitioner" }}
+            </div>
+          </div>
+          <div class="profile-avatar-small">
+            {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
+            {% if not user.first_name %}
+            {{ user.username|slice:":2"|upper }}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="container" style="position: relative; z-index: 10;">
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">
+      <i class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% else %}fa-circle-xmark{% endif %}"></i>
+      {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+        <div class="stat-label">Total Users</div>
+        <div class="stat-value">{{ total_users }}</div>
+        <div style="font-size: 12px; color: #10b981;"><i class="fa-solid fa-arrow-up"></i> 12% from last month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+        <div class="stat-label">Tests Processed</div>
+        <div class="stat-value">312</div>
+        <div style="font-size: 12px; color: #64748b;">30-day active scanning</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fa-solid fa-microchip"></i></div>
+        <div class="stat-label">AI Accuracy</div>
+        <div class="stat-value">95.1%</div>
+        <div style="font-size: 12px; color: var(--primary-600);">Real-time validation AUC</div>
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <div class="content-card">
+        <h3><i class="fa-solid fa-user-md" style="color: #4f46e5;"></i> Medical Staff (Doctors)</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Practitioner</th>
+                <th>Specialization</th>
+                <th>System ID</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for doc in doctors %}
+              <tr>
+                <td>
+                  <div class="user-badge">
+                    <div class="user-avatar" style="background: #e0e7ff; color: #4338ca;">{{ doc.username.0|upper }}
+                    </div>
+                    <div>
+                      <div style="font-weight: 600;">{{ doc.first_name|default:doc.username }}</div>
+                      <div style="font-size: 12px; color: #64748b;">{{ doc.email }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td style="color: #64748b; font-size: 13px;">{{ doc.userprofile.specialization|default:"General" }}</td>
+                <td>DR-{{ doc.id|add:1000 }}</td>
+                <td><span style="color: #10b981; font-weight: 600;"><i class="fa-solid fa-circle"
+                      style="font-size: 8px;"></i> Active</span></td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" style="text-align: center; color: #94a3b8; padding: 40px;">No medical staff registered.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="content-card">
+        <h3><i class="fa-solid fa-flask-vial" style="color: #0ea5a2;"></i> Lab Technicians</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Technician</th>
+                <th>System ID</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for lab in labs %}
+              <tr>
+                <td>
+                  <div class="user-badge">
+                    <div class="user-avatar" style="background: #ccfbf1; color: #0f766e;">{{ lab.username.0|upper }}
+                    </div>
+                    <div>
+                      <div style="font-weight: 600;">{{ lab.first_name|default:lab.username }}</div>
+                      <div style="font-size: 12px; color: #64748b;">{{ lab.email }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>LB-{{ lab.id|add:2000 }}</td>
+                <td><span style="color: #10b981; font-weight: 600;"><i class="fa-solid fa-circle"
+                      style="font-size: 8px;"></i> Active</span></td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="3" style="text-align: center; color: #94a3b8; padding: 40px;">No lab technicians
+                  registered.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal" id="userModal">
+    <div class="modal-sheet">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h2 style="font-size: 24px; color: #0f172a;">Create New Account</h2>
+        <button onclick="closeModal()"
+          style="border: none; background: transparent; cursor: pointer; color: #94a3b8; transition: color 0.2s;"
+          onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'"><i
+            class="fa-solid fa-xmark fa-xl"></i></button>
+      </div>
+
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_user">
+
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" name="name" required placeholder="Dr. Sarah Connor">
+        </div>
+
+        <div class="form-group">
+          <label>System Role</label>
+          <select name="role" id="roleSelect" required onchange="toggleSpecialization()">
+            <option value="doctor">Medical Practitioner (Doctor)</option>
+            <option value="lab">Lab Technician</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="specGroup">
+          <label>Medical Specialization</label>
+          <input type="text" name="specialization" placeholder="e.g. Cardiologist, Ophthalmologist">
+        </div>
+
+        <div class="form-group">
+          <label>Corporate Email / Username</label>
+          <input type="email" name="email" required placeholder="sarah.c@eye4heart.ai">
+        </div>
+
+        <div class="form-group">
+          <label>Initial Access Key (Password)</label>
+          <input type="password" name="password" required placeholder="••••••••">
+        </div>
+
+        <div style="margin-top: 35px; display: flex; gap: 12px;">
+          <button type="button" class="btn btn-soft" style="flex: 1;" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="flex: 2;">Create Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="site">
+    <div class="container inner">© <span id="y"></span> Eye4Heart AI · Administrative Protocol</div>
+  </footer>
+
+  <script>
+    function toggleSpecialization() {
+      const role = document.getElementById('roleSelect').value;
+      const specGroup = document.getElementById('specGroup');
+      specGroup.style.display = (role === 'doctor') ? 'block' : 'none';
+    }
+
+    function openModal() {
+      document.getElementById('userModal').classList.add('open');
+      toggleSpecialization(); // Run once on open
+    }
+    function closeModal() { document.getElementById('userModal').classList.remove('open'); }
+    document.getElementById('y').textContent = new Date().getFullYear();
+
+    // Close on outside click
+    window.onclick = function (event) {
+      const modal = document.getElementById('userModal');
+      if (event.target == modal) {
+        closeModal();
+      }
+    }
+  </script>
+</body>
+
+</html>

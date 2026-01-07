@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eye4Heart AI — Early Heart Risk from Retinal Images</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+  <link href="{% static 'css/base.css' %}" rel="stylesheet" />
+  <link href="{% static 'css/landing.css' %}" rel="stylesheet" />
+</head>
+
+<body>
+  <header class="site">
+    <div class="container nav">
+      <div class="brand"><i class="fa-solid fa-eye"></i> Eye4Heart AI</div>
+      <ul class="nav-links">
+        <li><a href="{% url 'index' %}">Home</a></li>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#roles">Roles</a></li>
+        <li><a href="{% url 'login' %}">Login</a></li>
+        <li><a class="btn btn-primary" href="{% url 'login' %}">Start free</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container inner">
+        <div class="hero-content">
+          <h1>AI screening for cardiovascular risk using retinal imaging</h1>
+          <p>Prescribe tests, capture retinal images, and receive AI-backed risk assessments. Patient records remain
+            visible only to assigned physicians.</p>
+          <div class="actions">
+            <a class="btn btn-primary" href="{% url 'login' %}"><i class="fa-solid fa-rocket"></i> Try the demo</a>
+            <a class="btn btn-outline" href="#how">See how it works</a>
+          </div>
+          <div class="logo-row">
+            <span class="muted">Trusted by academic labs and clinics</span>
+            <i class="fa-solid fa-shield-heart"></i>
+            <i class="fa-solid fa-stethoscope"></i>
+            <i class="fa-solid fa-hospital"></i>
+          </div>
+        </div>
+        <div class="hero-visuals">
+          <svg class="hero-main-img" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+            <!-- Retinal fundus image mockup -->
+            <defs>
+              <radialGradient id="retina" cx="50%" cy="50%">
+                <stop offset="0%" style="stop-color:#ff6b35" />
+                <stop offset="30%" style="stop-color:#f7931e" />
+                <stop offset="60%" style="stop-color:#8b4513" />
+                <stop offset="100%" style="stop-color:#2c1810" />
+              </radialGradient>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="3" />
+                <feMerge>
+                  <feMergeNode />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+            <rect width="600" height="400" fill="#1a1a1a" />
+            <circle cx="300" cy="200" r="180" fill="url(#retina)" />
+            <!-- Optic disc -->
+            <circle cx="220" cy="180" r="25" fill="#ffeb3b" opacity="0.8" />
+            <!-- Blood vessels -->
+            <path d="M220,180 Q300,150 420,160" stroke="#8b0000" stroke-width="3" fill="none" />
+            <path d="M220,180 Q280,220 380,240" stroke="#8b0000" stroke-width="2" fill="none" />
+            <path d="M220,180 Q250,120 320,100" stroke="#dc143c" stroke-width="2" fill="none" />
+            <path d="M220,180 Q200,250 180,320" stroke="#dc143c" stroke-width="2" fill="none" />
+            <!-- AI analysis overlay -->
+            <rect x="20" y="20" width="150" height="80" fill="rgba(255,255,255,0.9)" rx="8" />
+            <text x="30" y="40" font-family="Arial" font-size="12" fill="#0ea5a2">AI Analysis</text>
+            <text x="30" y="60" font-family="Arial" font-size="10" fill="#666">Risk Score: 67%</text>
+            <text x="30" y="75" font-family="Arial" font-size="10" fill="#666">Vessel Changes</text>
+            <text x="30" y="90" font-family="Arial" font-size="10" fill="#666">Detected</text>
+          </svg>
+          <div class="hero-overlay">
+            <h4>Risk Assessment</h4>
+            <div class="risk-indicator">
+              <span style="font-size:12px">Low</span>
+              <div class="risk-bar">
+                <div class="risk-fill"></div>
+              </div>
+              <span style="font-size:12px">High</span>
+            </div>
+            <p style="font-size:11px;margin-top:8px;color:#6b7280">Cardiovascular risk: 67%</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="kicker">Benefits</div>
+        <h2>Faster, explainable, and private by design</h2>
+        <p class="muted">Purpose-built for clinical workflows with role-based access and audit trails.</p>
+        <div class="cards feature-grid">
+          <div class="card">
+            <div class="feature-icon"><i class="fa-solid fa-brain"></i></div>
+            <h3>Explainable AI</h3>
+            <p class="muted">Visual cues and quantifiable risk scoring help inform decisions.</p>
+          </div>
+          <div class="card">
+            <div class="feature-icon"><i class="fa-solid fa-bolt"></i></div>
+            <h3>Rapid turnaround</h3>
+            <p class="muted">From upload to insight in minutes with automated QA checks.</p>
+          </div>
+          <div class="card">
+            <div class="feature-icon"><i class="fa-solid fa-user-shield"></i></div>
+            <h3>Protected data</h3>
+            <p class="muted">Data isolation guarantees only assigned doctors see their patients.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section how" id="how">
+      <div class="container">
+        <div class="kicker">How it works</div>
+        <h2>From prescription to report in four simple steps</h2>
+        <div class="how-steps">
+          <div class="step">
+            <div class="num">1</div>
+            <h3>Prescribe</h3>
+            <p class="muted">Doctor orders a retinal screening test for a patient.</p>
+          </div>
+          <div class="step">
+            <div class="num">2</div>
+            <h3>Capture & Upload</h3>
+            <p class="muted">Lab captures fundus images and uploads related reports.</p>
+          </div>
+          <div class="step">
+            <div class="num">3</div>
+            <h3>AI Analysis</h3>
+            <p class="muted">Models score risk and highlight biomarkers and vessel patterns.</p>
+          </div>
+          <div class="step">
+            <div class="num">4</div>
+            <h3>Review</h3>
+            <p class="muted">Assigned doctor reviews results and advises the patient.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section roles" id="roles">
+      <div class="container">
+        <div class="kicker">Designed for teams</div>
+        <h2>Three modules, one secure platform</h2>
+        <div class="cards">
+          <div class="card role">
+            <i class="fa-solid fa-user-md"></i>
+            <div>
+              <h3>Doctor</h3>
+              <p class="muted">Prescribe tests, monitor assigned patients, and access AI reports.</p><a
+                class="btn btn-outline" href="{% url 'login' %}">Doctor login</a>
+            </div>
+          </div>
+          <div class="card role">
+            <i class="fa-solid fa-flask"></i>
+            <div>
+              <h3>Lab Technician</h3>
+              <p class="muted">Register patients, assign doctors, and upload images and documents.</p><a
+                class="btn btn-outline" href="{% url 'login' %}">Lab login</a>
+            </div>
+          </div>
+          <div class="card role">
+            <i class="fa-solid fa-cogs"></i>
+            <div>
+              <h3>Admin</h3>
+              <p class="muted">Manage users, subscriptions, and compliance reporting.</p><a class="btn btn-outline"
+                href="{% url 'login' %}">Admin login</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section cta">
+      <div class="container inner">
+        <h2>See the workflow in action</h2>
+        <p>Use our demo credentials to explore each role and sample patient records.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="{% url 'login' %}">Open demo</a>
+          <a class="btn btn-outline" href="#">Request a walkthrough</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site">
+    <div class="container inner">© <span id="y"></span> Eye4Heart AI · Academic prototype</div>
+  </footer>
+
+  <script>
+    document.getElementById('y').textContent = new Date().getFullYear();
+  </script>
+</body>
+
+</html>

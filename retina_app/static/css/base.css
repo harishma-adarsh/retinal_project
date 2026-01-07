@@ -1,0 +1,53 @@
+/* Base styles shared across the site */
+:root{
+  --primary-600:#0ea5a2; /* teal */
+  --primary-700:#0f766e;
+  --accent-600:#0284c7; /* sky */
+  --indigo-600:#4f46e5;
+  --ink:#0f172a;
+  --ink-2:#334155;
+  --muted:#6b7280;
+  --canvas:#f8fafc;
+  --surface:#ffffff;
+  --border:#e5e7eb;
+  --shadow:0 12px 30px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;background:var(--canvas);color:var(--ink)}
+a{text-decoration:none;color:inherit}
+img{max-width:100%;display:block}
+
+.container{max-width:1200px;margin:0 auto;padding:0 20px}
+
+header.site{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);z-index:50}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--primary-700)}
+.brand i{background:var(--primary-600);color:#fff;border-radius:10px;width:34px;height:34px;display:grid;place-items:center}
+ul.nav-links{list-style:none;display:flex;gap:22px;align-items:center}
+ul.nav-links a{color:var(--ink-2);font-weight:600}
+ul.nav-links a:hover{color:var(--primary-700)}
+
+.btn{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;transition:.2s}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:var(--primary-600);color:#fff}
+.btn-outline{background:transparent;border:2px solid var(--primary-600);color:var(--primary-600)}
+.btn-soft{background:#e6fffb;color:var(--primary-700)}
+
+footer.site{margin-top:48px;background:var(--surface);border-top:1px solid var(--border);color:var(--ink-2)}
+footer.site .inner{padding:22px 0}
+
+.section{padding:70px 0}
+.section .kicker{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.section h2{font-size:28px;margin-bottom:8px}
+.muted{color:var(--muted)}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.card h3{margin:8px 0 6px}
+
+@media (max-width:768px){
+  ul.nav-links{display:none}
+}
+
+
