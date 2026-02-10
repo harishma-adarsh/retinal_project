@@ -372,6 +372,8 @@
       </div>
     </div>
   </div>
+  <!-- Hidden CSRF Token for JS fetch -->
+  <div style="display:none">{% csrf_token %}</div>
 
   <main class="container main-content">
     <div class="stats-container">
@@ -379,14 +381,14 @@
         <div class="stat-icon" style="background: #ccfbf1; color: #0f766e;"><i class="fa-solid fa-users"></i></div>
         <div class="stat-details">
           <h4>Total Patients</h4>
-          <div class="value" id="count-total">32</div>
+          <div class="value" id="count-total">{{ total_count|default:"0" }}</div>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon" style="background: #fff7ed; color: #c2410c;"><i class="fa-solid fa-clock"></i></div>
         <div class="stat-details">
           <h4>Pending Tasks</h4>
-          <div class="value" id="count-pending">08</div>
+          <div class="value" id="count-pending">{{ pending_count|default:"0" }}</div>
         </div>
       </div>
       <div class="stat-card">
@@ -394,7 +396,7 @@
         </div>
         <div class="stat-details">
           <h4>Active Uploads</h4>
-          <div class="value">03</div>
+          <div class="value" id="count-active">0</div>
         </div>
       </div>
       <div class="stat-card">
@@ -402,7 +404,7 @@
         </div>
         <div class="stat-details">
           <h4>Sync Success</h4>
-          <div class="value">99.8%</div>
+          <div class="value" id="sync-rate">100%</div>
         </div>
       </div>
     </div>
@@ -452,6 +454,9 @@
           <tbody id="utbody"></tbody>
         </table>
       </div>
+    </div>
+    </table>
+    </div>
     </div>
   </main>
 
@@ -517,50 +522,62 @@
     <div class="container inner">© <span id="y"></span> Eye4Heart AI · Laboratory Protocol</div>
   </footer>
 
+  {{ patients|json_script:"patients-data" }}
+  {{ uploads|json_script:"uploads-data" }}
+  {{ doctors|json_script:"doctors-data" }}
   <script>
-    const doctors = ["Dr. A. Patel", "Dr. L. Wong", "Dr. M. Singh", "Dr. R. Khan"];
-    let patients = [
-      { name: "John Carter", pid: "RH-0001", doctor: "Dr. A. Patel", status: "Pending", created: "2h ago" },
-      { name: "Priya Nair", pid: "RH-0002", doctor: "Dr. L. Wong", status: "In Progress", created: "5h ago" },
-      { name: "Luis Garcia", pid: "RH-0003", doctor: "Dr. M. Singh", status: "Completed", created: "1d ago" }
-    ];
-    let uploads = [{ patient: "John Carter", file: "fundus_left_01.png", type: "Retina Image", when: "2h ago" }];
+    let doctors = JSON.parse(document.getElementById('doctors-data').textContent);
+    if (!Array.isArray(doctors)) doctors = [];
+    console.log("Loaded doctors:", doctors);
+    let patients = JSON.parse(document.getElementById('patients-data').textContent);
+    let uploads = JSON.parse(document.getElementById('uploads-data').textContent);
 
     function render() {
       const tb = document.getElementById('tbody'); tb.innerHTML = '';
       patients.forEach(p => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>
-            <div style="font-weight: 600;">${p.name}</div>
-            <div style="font-size: 11px; color: #94a3b8;">Registered: ${p.created}</div>
-          </td>
-          <td><code style="background: #f1f5f9; padding: 4px 8px; border-radius: 6px;">${p.pid}</code></td>
-          <td>${p.doctor}</td>
-          <td><span class='badge ${badgeClass(p.status)}'>${p.status}</span></td>
-          <td style="display: flex; gap: 8px;">
-            <button class='btn btn-soft' style="padding: 8px 12px; font-size: 12px;" onclick="openUploadModal('${p.name}')">
-                <i class='fa-solid fa-upload'></i> Sync
-            </button>
-            <button class='btn btn-soft' style="padding: 8px 12px; font-size: 12px;" onclick="markDone('${p.pid}')">
-                <i class='fa-solid fa-check'></i>
-            </button>
-          </td>`;
+      <td>
+        <div style="font-weight: 600;">${p.name}</div>
+        <div style="font-size: 11px; color: #94a3b8;">Registered: ${p.created}</div>
+      </td>
+      <td><code style="background: #f1f5f9; padding: 4px 8px; border-radius: 6px;">${p.pid}</code></td>
+      <td>${p.doctor}</td>
+      <td><span class='badge ${badgeClass(p.status)}'>${p.status}</span></td>
+      <td style="display: flex; gap: 8px;">
+        <button class='btn btn-soft' style="padding: 8px 12px; font-size: 12px;" onclick="openUploadModal('${p.name}')">
+          <i class='fa-solid fa-upload'></i> Sync
+        </button>
+        ${p.status === 'Completed' ? `
+        <button class='btn btn-soft' style="padding: 8px 12px; font-size: 12px; background: #f1f5f9; color: #0ea5a9;" onclick="window.open('${p.pdf_url}', '_blank')">
+          <i class='fa-solid fa-file-pdf'></i> PDF
+        </button>` : ''}
+        <button class='btn btn-soft' style="padding: 8px 12px; font-size: 12px;" onclick="markDone('${p.pid}')">
+          <i class='fa-solid fa-check'></i>
+        </button>
+      </td>`;
         tb.appendChild(tr);
       });
       const ut = document.getElementById('utbody'); ut.innerHTML = '';
       uploads.forEach(u => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td style="font-weight: 600;">${u.patient}</td>
-            <td><i class="fa-solid fa-paperclip" style="font-size: 12px;"></i> ${u.file}</td>
-            <td style="color: #64748b;">${u.type}</td>
-            <td style="color: #94a3b8; font-size: 12px;">${u.when}</td>`;
+      <td style="font-weight: 600;">${u.patient}</td>
+      <td><i class="fa-solid fa-paperclip" style="font-size: 12px;"></i> ${u.file}</td>
+      <td style="color: #64748b;">
+        ${u.type}
+        ${u.prediction ? `<span class="badge ${u.prediction === 'High Risk' ? 'b-pending' : 'b-done'}" style="margin-left:8px">${u.prediction}</span>` : ''}
+      </td>
+      <td style="color: #94a3b8; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+        <span>${u.when}</span>
+        ${u.pdf_url ? `
+        <button class='btn btn-soft' style="padding: 4px 8px; font-size: 11px;" onclick="window.open('${u.pdf_url}', '_blank')">
+          <i class='fa-solid fa-download'></i> Report
+        </button>` : ''}
+      </td>`;
         ut.appendChild(tr)
       });
 
-      document.getElementById('count-total').textContent = patients.length + 29;
-      document.getElementById('count-pending').textContent = patients.filter(p => p.status !== 'Completed').length;
     }
 
     function badgeClass(s) {
@@ -580,8 +597,8 @@
       s.innerHTML = '';
       doctors.forEach(d => {
         const o = document.createElement('option');
-        o.textContent = d;
-        o.value = d;
+        o.textContent = d.display_name;
+        o.value = d.username;
         s.appendChild(o)
       });
       document.getElementById('patient-modal').classList.add('open');
@@ -589,12 +606,36 @@
     function closePatientModal() { document.getElementById('patient-modal').classList.remove('open') }
 
     function savePatient() {
-      const name = document.getElementById('pname').value || `Patient ${patients.length + 1}`;
-      const pid = document.getElementById('pid').value || `RH-2025-${1000 + patients.length}`;
-      const doc = document.getElementById('pdoc').value || doctors[0];
-      patients.unshift({ name, pid, doctor: doc, status: 'Pending', created: 'Just now' });
-      closePatientModal();
-      render();
+      const name = document.getElementById('pname').value;
+      const pid = document.getElementById('pid').value;
+      const doc = document.getElementById('pdoc').value;
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+      if (!name || !pid) { alert("Please enter name and ID"); return; }
+
+      fetch('/add_patient/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+          patient_name: name,
+          patient_id: pid,
+          doctor_name: doc
+        })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            // Update local list optimistic or reload
+            // Simplest is reload to get fresh data
+            window.location.reload();
+          } else {
+            alert("Error: " + data.message);
+          }
+        })
+        .catch(err => console.error(err));
     }
 
     function openUploadModal(patient) {
@@ -617,18 +658,55 @@
       document.getElementById(targetId).parentElement.style.borderColor = input.files[0] ? '#0f766e' : '#cbd5e1';
     }
 
-    function saveUpload() {
+    async function saveUpload() {
       const pt = document.getElementById('uPatient').value;
       const f1 = document.getElementById('uFile1').files[0];
       const f2 = document.getElementById('uFile2').files[0];
 
       if (!f1 && !f2) { alert("Please select assets to sync."); return; }
 
-      if (f1) uploads.unshift({ patient: pt, file: f1.name, type: 'Retina Scan', when: 'Just now' });
-      if (f2) uploads.unshift({ patient: pt, file: f2.name, type: 'Diagnostic Report', when: 'Just now' });
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      const formData = new FormData();
+      if (f1) formData.append('image', f1);
+      if (f2) formData.append('pdf', f2);
 
-      const ref = patients.find(p => p.name === pt);
-      if (ref && ref.status === 'Pending') ref.status = 'In Progress';
+      const patientObj = patients.find(p => p.name === pt);
+      if (patientObj) {
+        formData.append('patient_name', patientObj.name);
+        formData.append('patient_id', patientObj.pid);
+        formData.append('doctor_name', patientObj.doctor_username);
+      } else {
+        formData.append('patient_name', pt);
+      }
+
+      try {
+        const response = await fetch('/analyze/', {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': csrfToken
+          },
+          body: formData
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (f1) uploads.unshift({ patient: pt, file: f1.name, type: 'Retina Scan', when: 'Just now', prediction: data.prediction, pdf_url: data.pdf_url });
+          if (f2) uploads.unshift({ patient: pt, file: f2.name, type: 'Lab PDF', when: 'Just now', prediction: data.prediction, pdf_url: data.pdf_url });
+
+          const ref = patients.find(p => p.name === pt);
+          if (ref) {
+            ref.status = 'In Progress';
+            // Do NOT set to Completed here, that's what the tick button is for
+            if (data.pdf_url) ref.pdf_url = data.pdf_url;
+          }
+        } else {
+          const err = await response.json();
+          alert("Sync Failed: " + err.message);
+        }
+      } catch (error) {
+        console.error(error);
+        alert("Sync Error occurred.");
+      }
 
       render();
       closeUploadModal();
@@ -640,10 +718,25 @@
       document.getElementById('n2').innerText = 'Select PDF Report';
     }
 
-    function markDone(id) {
-      const p = patients.find(x => x.pid === id);
-      if (p) p.status = 'Completed';
-      render();
+    async function markDone(id) {
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      try {
+        const response = await fetch('/complete_report/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify({ patient_id: id })
+        });
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          alert("Failed to finalize report");
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
 
     document.getElementById('y').textContent = new Date().getFullYear();

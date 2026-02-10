@@ -365,6 +365,10 @@
           style="padding: 10px 20px; font-size: 14px; box-shadow: 0 4px 12px rgba(14, 165, 162, 0.3); height: fit-content;">
           <i class="fa-solid fa-plus"></i> New User
         </button>
+        <button class="btn btn-primary" onclick="openOnboardModal()"
+          style="padding: 10px 20px; font-size: 14px; background: #0f766e; border-color: #0f766e; box-shadow: 0 4px 12px rgba(15, 118, 110, 0.3); height: fit-content;">
+          <i class="fa-solid fa-user-plus"></i> Onboard Patient
+        </button>
 
         <div class="profile-section">
           <div class="profile-info">
@@ -399,21 +403,20 @@
         <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
         <div class="stat-label">Total Users</div>
         <div class="stat-value">{{ total_users }}</div>
-        <div style="font-size: 12px; color: #10b981;"><i class="fa-solid fa-arrow-up"></i> 12% from last month</div>
+        <div style="font-size: 12px; color: #10b981;">Total Registered Users</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon"><i class="fa-solid fa-heart-pulse"></i></div>
         <div class="stat-label">Tests Processed</div>
-        <div class="stat-value">312</div>
-        <div style="font-size: 12px; color: #64748b;">30-day active scanning</div>
+        <div class="stat-value">{{ total_reports|default:"0" }}</div>
+        <div style="font-size: 12px; color: #64748b;">Lifetime scans</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon"><i class="fa-solid fa-microchip"></i></div>
-        <div class="stat-label">AI Accuracy</div>
-        <div class="stat-value">95.1%</div>
-        <div style="font-size: 12px; color: var(--primary-600);">Real-time validation AUC</div>
-      </div>
+      <!-- <div class="stat-card">
+        <div class="stat-label">High Risk AI</div>
+        <div class="stat-value">{{ high_risk_percentage|default:"0" }}%</div>
+        <div style="font-size: 12px; color: var(--primary-600);">Calculated prevalence</div>
+      </div> -->
     </div>
+
 
     <div class="main-grid">
       <div class="content-card">
@@ -548,6 +551,49 @@
     </div>
   </div>
 
+  <div class="modal" id="onboardModal">
+    <div class="modal-sheet">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h2 style="font-size: 24px; color: #0f172a;">Onboard New Patient</h2>
+        <button onclick="closeOnboardModal()"
+          style="border: none; background: transparent; cursor: pointer; color: #94a3b8; transition: color 0.2s;"
+          onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'"><i
+            class="fa-solid fa-xmark fa-xl"></i></button>
+      </div>
+
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="onboard_patient">
+
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" name="patient_name" required placeholder="John Doe">
+        </div>
+
+        <div class="form-group">
+          <label>Protocol ID</label>
+          <input type="text" name="patient_id" required placeholder="RH-2025-X01">
+        </div>
+
+        <div class="form-group">
+          <label>Consulting Doctor</label>
+          <select name="doctor_username">
+            <option value="">-- Select Doctor --</option>
+            {% for doc in doctors_list_dropdown %}
+            <option value="{{ doc.username }}">{{ doc.display_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div style="margin-top: 35px; display: flex; gap: 12px;">
+          <button type="button" class="btn btn-soft" style="flex: 1;" onclick="closeOnboardModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary"
+            style="flex: 2; background: #0f766e; border-color: #0f766e;">Initialize Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <footer class="site">
     <div class="container inner">© <span id="y"></span> Eye4Heart AI · Administrative Protocol</div>
   </footer>
@@ -564,14 +610,20 @@
       toggleSpecialization(); // Run once on open
     }
     function closeModal() { document.getElementById('userModal').classList.remove('open'); }
+
+    function openOnboardModal() {
+      document.getElementById('onboardModal').classList.add('open');
+    }
+    function closeOnboardModal() { document.getElementById('onboardModal').classList.remove('open'); }
+
     document.getElementById('y').textContent = new Date().getFullYear();
 
     // Close on outside click
     window.onclick = function (event) {
-      const modal = document.getElementById('userModal');
-      if (event.target == modal) {
-        closeModal();
-      }
+      const uModal = document.getElementById('userModal');
+      const oModal = document.getElementById('onboardModal');
+      if (event.target == uModal) closeModal();
+      if (event.target == oModal) closeOnboardModal();
     }
   </script>
 </body>

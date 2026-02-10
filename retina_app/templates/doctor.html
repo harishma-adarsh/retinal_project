@@ -306,14 +306,14 @@
     </div>
   </div>
 
-  <main class="container main-content">
+  <main class="container main-content" style="margin-top: 30px;">
     <div class="stats-container">
       <div class="stat-card">
         <div class="stat-icon" style="background: #e0e7ff; color: #4338ca;"><i class="fa-solid fa-user-injured"></i>
         </div>
         <div class="stat-details">
           <h4>Total Patients</h4>
-          <div>12</div>
+          <div>{{ patient_count|default:"0" }}</div>
         </div>
       </div>
       <div class="stat-card">
@@ -321,7 +321,7 @@
             class="fa-solid fa-triangle-exclamation"></i></div>
         <div class="stat-details">
           <h4>High Risk</h4>
-          <div>03</div>
+          <div>{{ high_risk_count|default:"0" }}</div>
         </div>
       </div>
       <div class="stat-card">
@@ -329,17 +329,18 @@
         </div>
         <div class="stat-details">
           <h4>Reviewed Today</h4>
-          <div>05</div>
+          <div>{{ completed_count|default:"0" }}</div>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon" style="background: #fef3c7; color: #d97706;"><i class="fa-solid fa-clock"></i></div>
         <div class="stat-details">
           <h4>Awaiting Action</h4>
-          <div>04</div>
+          <div>{{ pending_count|default:"0" }}</div>
         </div>
       </div>
     </div>
+
 
     <div class="data-card">
       <h3><i class="fa-solid fa-list-check" style="color: var(--primary-600);"></i> Priority Review Queue</h3>
@@ -364,14 +365,9 @@
     <div class="container inner">© <span id="y"></span> Eye4Heart AI · Practitioner Protocol</div>
   </footer>
 
+  {{ patients|json_script:"patients-data" }}
   <script>
-    let patients = [
-      { name: "John Carter", id: "RH-001", status: "Pending", updated: "2h ago", risk: 0 },
-      { name: "Priya Nair", id: "RH-005", status: "In Progress", updated: "5h ago", risk: 0 },
-      { name: "Luis Garcia", id: "RH-012", status: "Completed", updated: "1d ago", risk: 78 },
-      { name: "Sarah Miller", id: "RH-018", status: "Completed", updated: "2d ago", risk: 42 },
-      { name: "David Chen", id: "RH-024", status: "Completed", updated: "3d ago", risk: 15 }
-    ];
+    let patients = JSON.parse(document.getElementById('patients-data').textContent);
 
     function getRiskClass(r) {
       if (r >= 70) return 'risk-high';
@@ -395,10 +391,11 @@
         let riskHtml = '<span style="color: #94a3b8;">—</span>';
         if (p.status === 'Completed') {
           const rClass = getRiskClass(p.risk);
+          const riskLabel = p.risk >= 70 ? 'High Risk' : 'Low Risk';
           riskHtml = `
               <div class="risk-indicator ${rClass}">
                 <div class="risk-bar"><div class="risk-fill" style="width: ${p.risk}%; background: currentColor;"></div></div>
-                <span>${p.risk}%</span>
+                <span>${p.risk}% - ${riskLabel}</span>
               </div>`;
         }
 
@@ -411,9 +408,13 @@
           <td><span class="badge ${getStatusClass(p.status)}">${p.status}</span></td>
           <td style="color: #64748b;">${p.updated}</td>
           <td>
-            <button class="btn btn-soft" style="padding: 6px 12px; font-size: 13px;">
-              <i class="fa-solid fa-file-medical"></i> Review
-            </button>
+            ${p.status === 'Completed' ? `
+            <button class="btn btn-soft" style="padding: 6px 12px; font-size: 13px;" onclick="window.open('${p.pdf_url}', '_blank')">
+              <i class="fa-solid fa-file-medical"></i> Review PDF
+            </button>` : `
+            <button class="btn btn-soft" style="padding: 6px 12px; font-size: 13px; opacity: 0.5; cursor: not-allowed;" title="Report not finalized" disabled>
+              <i class="fa-solid fa-file-medical"></i> Review PDF
+            </button>`}
           </td>
         `;
         tb.appendChild(tr);
