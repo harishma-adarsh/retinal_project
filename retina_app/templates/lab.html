@@ -498,7 +498,7 @@
           <div class="upload-zone" onclick="document.getElementById('uFile1').click()">
             <i class="fa-solid fa-camera-viewfinder"></i>
             <span id="n1">Select JPEG/PNG</span>
-            <input type="file" id="uFile1" hidden onchange="updateFileName(this, 'n1')">
+            <input type="file" id="uFile1" hidden onchange="updateFileName(this, 'n1')" accept="image/jpeg,image/png">
           </div>
         </div>
         <div class="form-field">
@@ -696,12 +696,12 @@
           const ref = patients.find(p => p.name === pt);
           if (ref) {
             ref.status = 'In Progress';
-            // Do NOT set to Completed here, that's what the tick button is for
             if (data.pdf_url) ref.pdf_url = data.pdf_url;
           }
+          alert("Synchronization successful! Analysis: " + data.prediction);
         } else {
           const err = await response.json();
-          alert("Sync Failed: " + err.message);
+          alert("Error: " + err.message + "\n\nPlease upload a valid clinical retinal scan.");
         }
       } catch (error) {
         console.error(error);

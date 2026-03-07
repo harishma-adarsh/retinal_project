@@ -32,6 +32,70 @@ def load_model():
             print(f"ERROR: Failed to load model/scaler: {e}")
     return _model, _scaler
 
+def validate_retina_scan(image_data):
+    """
+    Validates if the provided image is likely a retinal scan.
+    Returns: (is_valid: bool, message: str)
+    """
+    try:
+        from PIL import Image
+        import numpy as np
+        
+        # Load the image
+        img = Image.open(image_data)
+        # Convert to RGB to analyze colors
+        img_rgb = img.convert('RGB')
+        w, h = img_rgb.size
+        
+        # 1. Size Validation (Reject unrealistic or accidental uploads like huge logos)
+        if w > 4000 or h > 4000:
+             return False, "Image size too large for a standard retinal scan."
+        if w < 100 or h < 100:
+             return False, "Image resolution too low for clinical analysis."
+             
+        # 2. Corner Analysis (Retina scans are usually masked with a black circular frame)
+        # Check the 4 corners (top-left, top-right, bottom-left, bottom-right)
+        pixel_array = np.array(img_rgb)
+        corners = [
+            pixel_array[0, 0],           # Top-left
+            pixel_array[0, w-1],         # Top-right
+            pixel_array[h-1, 0],         # Bottom-left
+            pixel_array[h-1, w-1]        # Bottom-right
+        ]
+        
+        # If all corners have a brightness > 50, it's likely a regular photo/document, not a retina scan
+        corner_brightness = [np.mean(c) for c in corners]
+        if all(b > 60 for b in corner_brightness):
+            return False, "The image does not appear to be a retinal scan (missing black frame)."
+            
+        # 3. Content Analysis (Center should have some activity/brightness)
+        center_region = pixel_array[int(h*0.4):int(h*0.6), int(w*0.4):int(w*0.6)]
+        center_mean = np.mean(center_region)
+        if center_mean < 10:
+             return False, "Image is too dark or empty."
+
+        # 4. Biological Pattern Detection (Detect digital logos vs biological gradients)
+        # Resize to a small patch to speed up analysis of huge images
+        sample_size = (128, 128)
+        img_sample = img_rgb.resize(sample_size, Image.NEAREST)
+        pixel_sample = np.array(img_sample)
+        
+        # Calculate unique colors in the sample
+        unique_colors_sample = len(np.unique(pixel_sample.reshape(-1, 3), axis=0))
+        
+        # Determine unique colors ratio to distinguish artificial/digital graphics
+        if unique_colors_sample < 240:
+             return False, "This appears to be a digital graphic or text, not a biological retinal scan."
+             
+        # Re-seek the file so it can be read again by the prediction function
+        if hasattr(image_data, 'seek'):
+            image_data.seek(0)
+            
+        return True, "Valid scan"
+        
+    except Exception as e:
+        return False, f"Invalid image format: {str(e)}"
+
 def predict_image(image_data):
     """
     Perform prediction on the provided image data.
@@ -42,6 +106,13 @@ def predict_image(image_data):
     
     Current implementation uses RANDOM features for demonstration.
     """
+    # First, validate the image content
+    is_valid, msg = validate_retina_scan(image_data)
+    if not is_valid:
+        # If not a valid retina, we can return a specific indicator or just fail
+        print(f"VALIDATION FAILED: {msg}")
+        return f"INVALID: {msg}"
+
     try:
         from PIL import Image
         import numpy as np

@@ -296,6 +296,11 @@ def analyze_image(request):
             if image_file:
                 report.image = image_file
                 img_pred = predict_image(image_file)
+                
+                # Check for validation failure
+                if isinstance(img_pred, str) and img_pred.startswith("INVALID:"):
+                    error_msg = img_pred.replace("INVALID:", "").strip()
+                    return JsonResponse({'status': 'error', 'message': error_msg}, status=400)
             
             # PDF Analysis
             pdf_pred = None
