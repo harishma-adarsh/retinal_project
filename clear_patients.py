@@ -40,7 +40,7 @@ def clear_all_patients():
     # Delete all medical reports (Django will handle file deletion if configured)
     deleted_count = MedicalReport.objects.all().delete()[0]
     
-    print(f"✓ Deleted {deleted_count} patient records from database")
+    print(f"Deleted {deleted_count} patient records from database")
     
     # Clean up media files
     media_dirs = [
@@ -57,16 +57,16 @@ def clear_all_patients():
                     file_path = os.path.join(dir_path, filename)
                     if os.path.isfile(file_path):
                         os.remove(file_path)
-                print(f"✓ Cleaned files from {dir_path}")
+                print(f"Cleaned files from {dir_path}")
             except Exception as e:
-                print(f"⚠ Warning: Could not clean {dir_path}: {e}")
+                print(f"Warning: Could not clean {dir_path}: {e}")
     
     print("\n" + "="*60)
     print("DATABASE CLEARED SUCCESSFULLY")
     print("="*60)
-    print("\n✓ All patient data has been removed")
-    print("✓ Medical report files have been deleted")
-    print("✓ Database is now empty and ready for new data\n")
+    print("\nAll patient data has been removed")
+    print("Medical report files have been deleted")
+    print("Database is now empty and ready for new data\n")
 
 if __name__ == "__main__":
     clear_all_patients()

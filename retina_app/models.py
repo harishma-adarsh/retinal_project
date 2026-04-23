@@ -16,7 +16,7 @@ class UserProfile(models.Model):
 
 class MedicalReport(models.Model):
     patient_name = models.CharField(max_length=100)
-    patient_id = models.CharField(max_length=50, blank=True)
+    patient_id = models.CharField(max_length=50, blank=True, unique=True)
     doctor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, limit_choices_to={'userprofile__role': 'doctor'})
     image = models.ImageField(upload_to='scans/', blank=True, null=True)
     pdf_report = models.FileField(upload_to='reports/', blank=True, null=True)

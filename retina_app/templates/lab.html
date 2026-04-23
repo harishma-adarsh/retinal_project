@@ -611,7 +611,7 @@
       const doc = document.getElementById('pdoc').value;
       const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-      if (!name || !pid) { alert("Please enter name and ID"); return; }
+      if (!name || !pid) { console.warn("Missing name or ID"); return; }
 
       fetch('/add_patient/', {
         method: 'POST',
@@ -632,7 +632,7 @@
             // Simplest is reload to get fresh data
             window.location.reload();
           } else {
-            alert("Error: " + data.message);
+            console.error("Error adding patient: " + data.message);
           }
         })
         .catch(err => console.error(err));
@@ -663,7 +663,7 @@
       const f1 = document.getElementById('uFile1').files[0];
       const f2 = document.getElementById('uFile2').files[0];
 
-      if (!f1 && !f2) { alert("Please select assets to sync."); return; }
+      if (!f1 && !f2) { console.warn("No assets selected"); return; }
 
       const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
       const formData = new FormData();
@@ -698,14 +698,14 @@
             ref.status = 'In Progress';
             if (data.pdf_url) ref.pdf_url = data.pdf_url;
           }
-          alert("Synchronization successful! Analysis: " + data.prediction);
+          console.log("Synchronization successful! Analysis: " + data.prediction);
         } else {
           const err = await response.json();
-          alert("Error: " + err.message + "\n\nPlease upload a valid clinical retinal scan.");
+          console.error("Sync Error: " + err.message);
         }
       } catch (error) {
         console.error(error);
-        alert("Sync Error occurred.");
+        console.error("Sync Error occurred.");
       }
 
       render();

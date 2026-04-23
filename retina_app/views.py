@@ -216,21 +216,19 @@ def admin_view(request):
             pdoc_username = request.POST.get('doctor_username')
             
             if pname and pid:
-                # Only block if there is a completed report (with prediction) in the last 7 days
-                one_week_ago = timezone.now() - timedelta(days=7)
-                if MedicalReport.objects.filter(patient_id=pid, prediction__isnull=False, created_at__gte=one_week_ago).exists():
-                    messages.error(request, f"Patient {pid} has a completed report within the last 7 days. Please wait 1 week.")
-                    return redirect('admin_panel')
-
-                report = MedicalReport(patient_name=pname, patient_id=pid)
-                if pdoc_username:
-                    try:
-                        doc = User.objects.get(username=pdoc_username, userprofile__role='doctor')
-                        report.doctor = doc
-                    except User.DoesNotExist:
-                        pass
-                report.save()
-                messages.success(request, f"Successfully onboarded patient: {pname}")
+                # Unique constraint on patient_id will handle duplicates
+                try:
+                    report = MedicalReport(patient_name=pname, patient_id=pid)
+                    if pdoc_username:
+                        try:
+                            doc = User.objects.get(username=pdoc_username, userprofile__role='doctor')
+                            report.doctor = doc
+                        except User.DoesNotExist:
+                            pass
+                    report.save()
+                    messages.success(request, f"Successfully onboarded patient: {pname}")
+                except Exception as e:
+                    messages.error(request, f"Error: Protocol ID '{pid}' already exists or invalid data.")
             else:
                 messages.error(request, "Missing patient name or ID.")
             return redirect('admin_panel')
@@ -275,10 +273,7 @@ def analyze_image(request):
             doctor_name = request.POST.get('doctor_name', 'Unassigned')
 
             # Check 7-day restriction ONLY for completed reports (those with a prediction)
-            if patient_id and patient_id != 'N/A':
-                one_week_ago = timezone.now() - timedelta(days=7)
-                if MedicalReport.objects.filter(patient_id=patient_id, prediction__isnull=False, created_at__gte=one_week_ago).exists():
-                     return JsonResponse({'status': 'error', 'message': f'Patient {patient_id} already has a completed report within the last 7 days. Please wait 1 week.'}, status=400)
+                # Unique constraint on patient_id will handle duplicates
             # 2. Find or Create Report (MANDATORY)
             report = None
             if patient_id and patient_id != 'N/A':
@@ -345,7 +340,10 @@ def analyze_image(request):
                 if doc_user:
                     report.doctor = doc_user
             
-            report.save()
+            try:
+                report.save()
+            except Exception:
+                return JsonResponse({'status': 'error', 'message': f'Protocol ID {patient_id} already exists.'}, status=400)
             
             # Return full telemetry for instant UI sync
             numeric_val = 88 if 'high' in report.prediction.lower() else 12
@@ -382,10 +380,7 @@ def add_patient(request):
             if not patient_name or not patient_id:
                 return JsonResponse({'status': 'error', 'message': 'Missing fields'}, status=400)
 
-            # Only block if there is a completed report in the last 7 days
-            one_week_ago = timezone.now() - timedelta(days=7)
-            if MedicalReport.objects.filter(patient_id=patient_id, prediction__isnull=False, created_at__gte=one_week_ago).exists():
-                 return JsonResponse({'status': 'error', 'message': f'Patient {patient_id} has a completed report within the last 7 days. Please wait 1 week.'}, status=400)
+            # Unique constraint on patient_id will handle duplicates
 
             report = MedicalReport(
                 patient_name=patient_name,
@@ -408,7 +403,10 @@ def add_patient(request):
                         if doc:
                             report.doctor = doc
             
-            report.save()
+            try:
+                report.save()
+            except Exception:
+                return JsonResponse({'status': 'error', 'message': f'Protocol ID {patient_id} already exists.'}, status=400)
             
             return JsonResponse({'status': 'success', 'message': 'Patient added'})
             
