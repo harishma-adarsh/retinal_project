@@ -39,25 +39,20 @@ def analyze_image(image_path):
         print(f"  Complexity Ratio:   {complexity_ratio:.3f}")
         
         # Apply the current AI thresholds (from ml_utils.py)
-        print(f"\nCurrent AI Thresholds:")
-        print(f"  High Risk if: StdDev > 40.0 OR (Ratio > 1.0 AND StdDev > 39.5)")
+        is_high_risk = std_dev > 40.0 or (complexity_ratio > 1.0 and std_dev > 39.5)
         
-        # Check the conditions
-        condition1 = std_dev > 40.0
-        condition2 = complexity_ratio > 1.0 and std_dev > 39.5
-        
-        print(f"\nCondition Checks:")
-        print(f"  StdDev > 40.0:           {condition1} ({std_dev:.2f})")
-        print(f"  Ratio > 1.0:             {complexity_ratio > 1.0} ({complexity_ratio:.3f})")
-        print(f"  StdDev > 39.5:           {std_dev > 39.5} ({std_dev:.2f})")
-        print(f"  Condition 2 (Both):      {condition2}")
-        
-        if condition1 or condition2:
+        if is_high_risk:
+            # New dynamic calculation
+            risk_val = min(98.0, 70.0 + (std_dev - 39.5) * 4.0)
             prediction = "HIGH RISK"
-            color = "RED"
         else:
+            # New dynamic calculation
+            risk_val = max(3.0, 35.0 - (39.5 - std_dev) * 3.0)
             prediction = "LOW RISK"
-            color = "GREEN"
+        
+        print(f"\nAI ANALYSIS RESULT:")
+        print(f"  Status:             {prediction}")
+        print(f"  Dynamic Risk:       {risk_val:.1f}%")
         
         print(f"\n{'='*60}")
         print(f"AI PREDICTION: {prediction}")

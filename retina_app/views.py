@@ -61,16 +61,17 @@ def doctor_view(request):
         # Determine status
         status = r.status
 
-        # Standardize risk values
+        # Use stored risk factor or fallback to defaults
         r_label = "N/A"
-        r_val = 0
+        r_val = r.risk_factor or 0
+        
         if r.prediction:
             if 'high' in r.prediction.lower():
                 r_label = "High Risk"
-                r_val = 88
+                if r_val == 0: r_val = 88 # Fallback for old records
             elif 'low' in r.prediction.lower():
                 r_label = "Low Risk"
-                r_val = 12
+                if r_val == 0: r_val = 12 # Fallback for old records
 
         patients_list.append({
             'name': r.patient_name,
@@ -117,17 +118,17 @@ def lab_view(request):
             else:
                 doc_display = r.doctor.username
 
-        # Standardize risk values
+        # Use stored risk factor
+        r_val = r.risk_factor or 0
         r_label = "Low Risk" # Default
-        r_val = 12
         
         pred_clean = str(r.prediction or "").lower()
         if 'high' in pred_clean:
             r_label = "High Risk"
-            r_val = 88
+            if r_val == 0: r_val = 88
         elif 'low' in pred_clean:
             r_label = "Low Risk"
-            r_val = 12
+            if r_val == 0: r_val = 12
         else:
             r_label = "N/A"
             r_val = 0
@@ -146,17 +147,17 @@ def lab_view(request):
 
         # Add to uploads list if it has an image
         if r.image:
-             # Standardize risk values for display
+             # Use stored risk factor
              u_label = "N/A"
-             u_risk_val = 0
+             u_risk_val = r.risk_factor or 0
              if r.prediction:
                  p_lower = r.prediction.lower()
                  if 'high' in p_lower:
                      u_label = "High Risk"
-                     u_risk_val = 88
+                     if u_risk_val == 0: u_risk_val = 88
                  elif 'low' in p_lower:
                      u_label = "Low Risk"
-                     u_risk_val = 12
+                     if u_risk_val == 0: u_risk_val = 12
 
              uploads_list.append({
                  'patient': r.patient_name,
@@ -216,7 +217,13 @@ def admin_view(request):
             pdoc_username = request.POST.get('doctor_username')
             
             if pname and pid:
-                # Unique constraint on patient_id will handle duplicates
+                pid = pid.strip()
+                # Only block if there is a completed report (with prediction) in the last 7 days
+                one_week_ago = timezone.now() - timedelta(days=7)
+                if MedicalReport.objects.filter(patient_id__iexact=pid, created_at__gte=one_week_ago).exclude(prediction__isnull=True).exclude(prediction='').exists():
+                    messages.error(request, "This patient has already submitted data. Please try again after 7 days.")
+                    return redirect('admin_panel')
+
                 try:
                     report = MedicalReport(patient_name=pname, patient_id=pid)
                     if pdoc_username:
@@ -273,7 +280,13 @@ def analyze_image(request):
             doctor_name = request.POST.get('doctor_name', 'Unassigned')
 
             # Check 7-day restriction ONLY for completed reports (those with a prediction)
-                # Unique constraint on patient_id will handle duplicates
+            if patient_id and patient_id != 'N/A':
+                patient_id = patient_id.strip()
+                one_week_ago = timezone.now() - timedelta(days=7)
+                # Block if any COMPLETED report exists for this ID in the last 7 days
+                if MedicalReport.objects.filter(patient_id__iexact=patient_id, created_at__gte=one_week_ago).exclude(prediction__isnull=True).exclude(prediction='').exists():
+                     return JsonResponse({'status': 'error', 'message': 'This patient has already submitted data. Please try again after 7 days.'})
+            
             # 2. Find or Create Report (MANDATORY)
             report = None
             if patient_id and patient_id != 'N/A':
@@ -286,16 +299,16 @@ def analyze_image(request):
                 report.patient_name = patient_name
 
             # 3. Process Assets
-            # Image Analysis
-            img_pred = "Low Risk"
+            img_pred_label = "Low Risk"
+            img_risk_val = 12.0
             if image_file:
                 report.image = image_file
-                img_pred = predict_image(image_file)
+                img_pred_label, img_risk_val = predict_image(image_file)
                 
                 # Check for validation failure
-                if isinstance(img_pred, str) and img_pred.startswith("INVALID:"):
-                    error_msg = img_pred.replace("INVALID:", "").strip()
-                    return JsonResponse({'status': 'error', 'message': error_msg}, status=400)
+                if isinstance(img_pred_label, str) and img_pred_label.startswith("INVALID:"):
+                    error_msg = img_pred_label.replace("INVALID:", "").strip()
+                    return JsonResponse({'status': 'error', 'message': error_msg})
             
             # PDF Analysis
             pdf_pred = None
@@ -322,15 +335,19 @@ def analyze_image(request):
             if pdf_pred == "High Risk":
                 # PDF explicitly says High Risk
                 report.prediction = "High Risk"
+                report.risk_factor = 88.0
             elif pdf_pred == "Low Risk":
                 # PDF explicitly says Low Risk
                 report.prediction = "Low Risk"
-            elif img_pred:
+                report.risk_factor = 12.0
+            elif image_file:
                 # Trust the image analysis
-                report.prediction = img_pred
+                report.prediction = img_pred_label
+                report.risk_factor = img_risk_val
             else:
                 # Safe default if nothing else available
                 report.prediction = "Low Risk"
+                report.risk_factor = 12.0
 
             report.status = "In Progress"
 
@@ -345,13 +362,10 @@ def analyze_image(request):
             except Exception:
                 return JsonResponse({'status': 'error', 'message': f'Protocol ID {patient_id} already exists.'}, status=400)
             
-            # Return full telemetry for instant UI sync
-            numeric_val = 88 if 'high' in report.prediction.lower() else 12
-            
             return JsonResponse({
                 'status': 'success', 
                 'prediction': report.prediction,
-                'risk': numeric_val,
+                'risk': report.risk_factor,
                 'pdf_url': report.pdf_report.url if report.pdf_report else "",
                 'message': 'Analysis completed and saved'
             })
@@ -380,7 +394,11 @@ def add_patient(request):
             if not patient_name or not patient_id:
                 return JsonResponse({'status': 'error', 'message': 'Missing fields'}, status=400)
 
-            # Unique constraint on patient_id will handle duplicates
+            patient_id = patient_id.strip()
+            # Only block if there is a completed report in the last 7 days
+            one_week_ago = timezone.now() - timedelta(days=7)
+            if MedicalReport.objects.filter(patient_id__iexact=patient_id, created_at__gte=one_week_ago).exclude(prediction__isnull=True).exclude(prediction='').exists():
+                 return JsonResponse({'status': 'error', 'message': 'This patient has already submitted data. Please try again after 7 days.'})
 
             report = MedicalReport(
                 patient_name=patient_name,
@@ -446,11 +464,15 @@ def complete_report(request):
             # Correct risk factor logic based on prediction
             pred_str = str(report.prediction or "").lower()
             if 'high' in pred_str:
-                final_risk_val = 88
+                if not report.risk_factor or report.risk_factor < 50:
+                    report.risk_factor = 88.0
                 report.prediction = "High Risk"
             else:
-                final_risk_val = 12
+                if not report.risk_factor or report.risk_factor > 50:
+                    report.risk_factor = 12.0
                 report.prediction = "Low Risk"
+            
+            final_risk_val = report.risk_factor
 
             pdf_data = {
                 'patient_name': report.patient_name,

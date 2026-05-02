@@ -471,6 +471,7 @@
       <div class="form-field">
         <label>Protocol ID</label>
         <input type="text" id="pid" placeholder="RH-2025-X01">
+        <div id="pid-error" style="color: #ef4444; font-size: 12px; margin-top: 5px; display: none;"></div>
       </div>
       <div class="form-field">
         <label>Consulting Doctor</label>
@@ -490,6 +491,7 @@
       <div class="form-field">
         <label>Sync Target (Patient)</label>
         <select id="uPatient" disabled style="background: #f8fafc; color: #94a3b8;"></select>
+        <div id="upload-error" style="color: #ef4444; font-size: 12px; margin-top: 5px; display: none;"></div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -603,7 +605,15 @@
       });
       document.getElementById('patient-modal').classList.add('open');
     }
-    function closePatientModal() { document.getElementById('patient-modal').classList.remove('open') }
+    function closePatientModal() { 
+      document.getElementById('patient-modal').classList.remove('open');
+      // Clear inputs
+      document.getElementById('pname').value = '';
+      document.getElementById('pid').value = '';
+      // Clear errors
+      document.getElementById('pid-error').style.display = 'none';
+      document.getElementById('pid-error').textContent = '';
+    }
 
     function savePatient() {
       const name = document.getElementById('pname').value;
@@ -612,6 +622,9 @@
       const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
       if (!name || !pid) { console.warn("Missing name or ID"); return; }
+
+      const errDiv = document.getElementById('pid-error');
+      errDiv.style.display = 'none';
 
       fetch('/add_patient/', {
         method: 'POST',
@@ -628,11 +641,10 @@
         .then(response => response.json())
         .then(data => {
           if (data.status === 'success') {
-            // Update local list optimistic or reload
-            // Simplest is reload to get fresh data
             window.location.reload();
           } else {
-            console.error("Error adding patient: " + data.message);
+            errDiv.textContent = data.message;
+            errDiv.style.display = 'block';
           }
         })
         .catch(err => console.error(err));
@@ -650,7 +662,20 @@
       if (patient) s.value = patient;
       document.getElementById('upload-modal').classList.add('open');
     }
-    function closeUploadModal() { document.getElementById('upload-modal').classList.remove('open') }
+    function closeUploadModal() { 
+      document.getElementById('upload-modal').classList.remove('open');
+      // Reset inputs
+      document.getElementById('uFile1').value = '';
+      document.getElementById('uFile2').value = '';
+      document.getElementById('n1').innerText = 'Select JPEG/PNG';
+      document.getElementById('n2').innerText = 'Select PDF Report';
+      // Reset style
+      document.getElementById('n1').parentElement.style.borderColor = '#cbd5e1';
+      document.getElementById('n2').parentElement.style.borderColor = '#cbd5e1';
+      // Clear errors
+      document.getElementById('upload-error').style.display = 'none';
+      document.getElementById('upload-error').textContent = '';
+    }
 
     function updateFileName(input, targetId) {
       const fileName = input.files[0]?.name || 'Click to upload';
@@ -679,6 +704,9 @@
         formData.append('patient_name', pt);
       }
 
+      const errDiv = document.getElementById('upload-error');
+      errDiv.style.display = 'none';
+
       try {
         const response = await fetch('/analyze/', {
           method: 'POST',
@@ -690,22 +718,30 @@
 
         if (response.ok) {
           const data = await response.json();
-          if (f1) uploads.unshift({ patient: pt, file: f1.name, type: 'Retina Scan', when: 'Just now', prediction: data.prediction, pdf_url: data.pdf_url });
-          if (f2) uploads.unshift({ patient: pt, file: f2.name, type: 'Lab PDF', when: 'Just now', prediction: data.prediction, pdf_url: data.pdf_url });
+          if (data.status === 'success') {
+            if (f1) uploads.unshift({ patient: pt, file: f1.name, type: 'Retina Scan', when: 'Just now', prediction: data.prediction, pdf_url: data.pdf_url });
+            if (f2) uploads.unshift({ patient: pt, file: f2.name, type: 'Lab PDF', when: 'Just now', prediction: data.prediction, pdf_url: data.pdf_url });
 
-          const ref = patients.find(p => p.name === pt);
-          if (ref) {
-            ref.status = 'In Progress';
-            if (data.pdf_url) ref.pdf_url = data.pdf_url;
+            const ref = patients.find(p => p.name === pt);
+            if (ref) {
+              ref.status = 'In Progress';
+              if (data.pdf_url) ref.pdf_url = data.pdf_url;
+            }
+            render();
+            closeUploadModal();
+          } else {
+            errDiv.textContent = data.message;
+            errDiv.style.display = 'block';
           }
-          console.log("Synchronization successful! Analysis: " + data.prediction);
         } else {
           const err = await response.json();
-          console.error("Sync Error: " + err.message);
+          errDiv.textContent = "Error: " + err.message;
+          errDiv.style.display = 'block';
         }
       } catch (error) {
         console.error(error);
-        console.error("Sync Error occurred.");
+        errDiv.textContent = "Sync Error occurred.";
+        errDiv.style.display = 'block';
       }
 
       render();
