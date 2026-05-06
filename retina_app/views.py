@@ -272,8 +272,8 @@ def analyze_image(request):
             image_file = request.FILES.get('image')
             pdf_file = request.FILES.get('pdf') # Accept manual PDF upload
             
-            if not image_file and not pdf_file:
-                 return JsonResponse({'status': 'error', 'message': 'No assets provided'}, status=400)
+            if not image_file or not pdf_file:
+                 return JsonResponse({'status': 'error', 'message': 'Both a Retina Scan (image) and Lab Data (PDF) are required to sync.'}, status=400)
 
             patient_name = request.POST.get('patient_name', 'Unknown')
             patient_id = request.POST.get('patient_id', 'N/A')
@@ -314,18 +314,49 @@ def analyze_image(request):
             pdf_pred = None
             if pdf_file:
                 report.pdf_report = pdf_file
-                pdf_content = pdf_file.read().lower()
-                pdf_file.seek(0)
+                try:
+                    pdf_file.seek(0)
+                    from pypdf import PdfReader
+                    pdf_reader = PdfReader(pdf_file)
+                    extracted_text = ""
+                    for page in pdf_reader.pages:
+                        text = page.extract_text()
+                        if text:
+                            extracted_text += text + " "
+                    
+                    text_found = len(extracted_text.strip()) > 10
+                    pdf_content = extracted_text.lower().encode('utf-8', errors='ignore')
+                except Exception:
+                    text_found = False
+                    pdf_content = b""
+                finally:
+                    pdf_file.seek(0)
                 
                 # Clinical Marker Logic
-                h_clinical = [b"risk: high", b"high risk", b"positive result", b"finding: abnormal"]
-                l_clinical = [b"risk: low", b"low risk", b"negative result", b"finding: normal", b"healthy", b"clear"]
+                h_clinical = [b"risk: high", b"high risk", b"positive result", b"finding: abnormal", b"target: 1", b"disease: present"]
+                l_clinical = [b"risk: low", b"low risk", b"negative result", b"finding: normal", b"healthy", b"clear", b"target: 0", b"disease: absent"]
+                
+                # Excel Data / General Medical Validation Markers (Heart Disease Dataset cols, etc.)
+                valid_excel_markers = [
+                    b"chol", b"thalach", b"max_hr", b"ex_ang", b"st_depr", 
+                    b"fbs", b"ekg", b"blood pressure", b"vessels", 
+                    b"heart", b"disease", b"chest pain", b"resting", b"angina", b"thallium"
+                ]
+                
+                pdf_name = pdf_file.name.lower()
+                is_valid_pdf = False
                 
                 if any(m in pdf_content for m in h_clinical):
                     pdf_pred = "High Risk"
+                    is_valid_pdf = True
                 elif any(m in pdf_content for m in l_clinical):
                     pdf_pred = "Low Risk"
-                # No filename fallback - if no markers found, pdf_pred stays None
+                    is_valid_pdf = True
+                elif any(m in pdf_content for m in valid_excel_markers):
+                    is_valid_pdf = True
+                    
+                if not is_valid_pdf:
+                    return JsonResponse({'status': 'error', 'message': 'The uploaded PDF does not appear to contain valid lab or medical data. Please upload a valid report.'})
 
             # 4. FINAL DECISION - Trust Image Analysis First
             # Priority 1: Explicit PDF clinical markers (if present)

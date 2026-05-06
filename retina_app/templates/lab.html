@@ -554,7 +554,7 @@
         <button class='btn btn-soft' style="padding: 8px 12px; font-size: 12px; background: #f1f5f9; color: #0ea5a9;" onclick="window.open('${p.pdf_url}', '_blank')">
           <i class='fa-solid fa-file-pdf'></i> PDF
         </button>` : ''}
-        <button class='btn btn-soft' style="padding: 8px 12px; font-size: 12px;" onclick="markDone('${p.pid}')">
+        <button class='btn btn-soft' style="padding: 8px 12px; font-size: 12px; ${p.status === 'Pending' ? 'opacity: 0.5; cursor: not-allowed;' : ''}" onclick="markDone('${p.pid}')" ${p.status === 'Pending' ? 'disabled' : ''}>
           <i class='fa-solid fa-check'></i>
         </button>
       </td>`;
@@ -688,7 +688,11 @@
       const f1 = document.getElementById('uFile1').files[0];
       const f2 = document.getElementById('uFile2').files[0];
 
-      if (!f1 && !f2) { console.warn("No assets selected"); return; }
+      if (!f1 || !f2) { 
+        document.getElementById('upload-error').textContent = "Both Retina Scan and Lab Data (PDF) must be selected.";
+        document.getElementById('upload-error').style.display = 'block';
+        return; 
+      }
 
       const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
       const formData = new FormData();
@@ -743,15 +747,6 @@
         errDiv.textContent = "Sync Error occurred.";
         errDiv.style.display = 'block';
       }
-
-      render();
-      closeUploadModal();
-
-      // Reset inputs
-      document.getElementById('uFile1').value = '';
-      document.getElementById('uFile2').value = '';
-      document.getElementById('n1').innerText = 'Select JPEG/PNG';
-      document.getElementById('n2').innerText = 'Select PDF Report';
     }
 
     async function markDone(id) {

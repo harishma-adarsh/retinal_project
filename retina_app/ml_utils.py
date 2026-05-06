@@ -111,7 +111,7 @@ def predict_image(image_data):
     if not is_valid:
         # If not a valid retina, we can return a specific indicator or just fail
         print(f"VALIDATION FAILED: {msg}")
-        return f"INVALID: {msg}"
+        return f"INVALID: {msg}", 0.0
 
     try:
         from PIL import Image
